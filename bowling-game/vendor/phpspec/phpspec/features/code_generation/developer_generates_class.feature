@@ -3,6 +3,7 @@ Feature: Developer generates a class
   I want to automate creating classes
   In order to avoid repetitive tasks and interruptions in development flow
 
+  @smoke @php:~5.4||~7.0
   Scenario: Generating a class
     Given I have started describing the "CodeGeneration/ClassExample1/Markdown" class
     When I run phpspec and answer "y" when asked if I want to generate the code
@@ -18,7 +19,61 @@ Feature: Developer generates a class
 
       """
 
-    @issue269
+  @issue269
+  Scenario: Generating a class with psr4 prefix
+    Given the config file contains:
+    """
+    suites:
+      behat_suite:
+        namespace: Behat\Tests\MyNamespace
+        psr4_prefix: Behat\Tests
+    """
+    And I have started describing the "Behat/Tests/MyNamespace/Markdown" class
+    When I run phpspec and answer "y" when asked if I want to generate the code
+    Then a new class should be generated in the "src/MyNamespace/Markdown.php":
+    """
+    <?php
+
+    namespace Behat\Tests\MyNamespace;
+
+    class Markdown
+    {
+    }
+
+    """
+
+  @issue127
+  Scenario: Generating a class with PSR0 must convert classname underscores to directory separator
+    Given I have started describing the "CodeGeneration/ClassExample1/Text_Markdown" class
+    When I run phpspec and answer "y" when asked if I want to generate the code
+    Then a new class should be generated in the "src/CodeGeneration/ClassExample1/Text/Markdown.php":
+      """
+      <?php
+
+      namespace CodeGeneration\ClassExample1;
+
+      class Text_Markdown
+      {
+      }
+
+      """
+
+  @issue127
+  Scenario: Generating a class with PSR0 must not convert namespace underscores to directory separator
+    Given I have started describing the "CodeGeneration/Class_Example2/Text_Markdown" class
+    When I run phpspec and answer "y" when asked if I want to generate the code
+    Then a new class should be generated in the "src/CodeGeneration/Class_Example2/Text/Markdown.php":
+      """
+      <?php
+
+      namespace CodeGeneration\Class_Example2;
+
+      class Text_Markdown
+      {
+      }
+
+      """
+
   Scenario: Generating a class when expectations on collaborator are defined
     Given the spec file "spec/CodeGeneration/MethodExample2/ForgotPasswordSpec.php" contains:
     """
@@ -76,3 +131,10 @@ Feature: Developer generates a class
     }
 
     """
+
+  @isolated @php:~5.4||~7.0
+  Scenario: Generating a class outside of autoloadable paths gives a warning
+    Given I have started describing the "CodeGeneration/ClassExample2/Markdown" class
+    But I have not configured an autoloader
+    When I run phpspec and answer "y" when asked if I want to generate the code
+    Then I should see an error about the missing autoloader

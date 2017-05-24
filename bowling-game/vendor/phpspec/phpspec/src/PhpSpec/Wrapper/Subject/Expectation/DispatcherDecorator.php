@@ -18,25 +18,20 @@ use PhpSpec\Exception\Example\FailureException;
 use PhpSpec\Loader\Node\ExampleNode;
 use PhpSpec\Matcher\MatcherInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-
 use Exception;
 
-/**
- * Class DispatcherDecorator
- * @package PhpSpec\Wrapper\Subject\Expectation
- */
 class DispatcherDecorator extends Decorator implements ExpectationInterface
 {
     /**
-     * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+     * @var EventDispatcherInterface
      */
     private $dispatcher;
     /**
-     * @var \PhpSpec\Matcher\MatcherInterface
+     * @var MatcherInterface
      */
     private $matcher;
     /**
-     * @var \PhpSpec\Loader\Node\ExampleNode
+     * @var ExampleNode
      */
     private $example;
 
@@ -46,8 +41,12 @@ class DispatcherDecorator extends Decorator implements ExpectationInterface
      * @param MatcherInterface         $matcher
      * @param ExampleNode              $example
      */
-    public function __construct(ExpectationInterface $expectation, EventDispatcherInterface $dispatcher, MatcherInterface $matcher, ExampleNode $example)
-    {
+    public function __construct(
+        ExpectationInterface $expectation,
+        EventDispatcherInterface $dispatcher,
+        MatcherInterface $matcher,
+        ExampleNode $example
+    ) {
         $this->setExpectation($expectation);
         $this->dispatcher = $dispatcher;
         $this->matcher = $matcher;
@@ -75,19 +74,42 @@ class DispatcherDecorator extends Decorator implements ExpectationInterface
             $result = $this->getExpectation()->match($alias, $subject, $arguments);
             $this->dispatcher->dispatch(
                 'afterExpectation',
-                new ExpectationEvent($this->example, $this->matcher, $subject, $alias, $arguments, ExpectationEvent::PASSED)
+                new ExpectationEvent(
+                    $this->example,
+                    $this->matcher,
+                    $subject,
+                    $alias,
+                    $arguments,
+                    ExpectationEvent::PASSED
+                )
             );
         } catch (FailureException $e) {
             $this->dispatcher->dispatch(
                 'afterExpectation',
-                new ExpectationEvent($this->example, $this->matcher, $subject, $alias, $arguments, ExpectationEvent::FAILED, $e)
+                new ExpectationEvent(
+                    $this->example,
+                    $this->matcher,
+                    $subject,
+                    $alias,
+                    $arguments,
+                    ExpectationEvent::FAILED,
+                    $e
+                )
             );
 
             throw $e;
         } catch (Exception $e) {
             $this->dispatcher->dispatch(
                 'afterExpectation',
-                new ExpectationEvent($this->example, $this->matcher, $subject, $alias, $arguments, ExpectationEvent::BROKEN, $e)
+                new ExpectationEvent(
+                    $this->example,
+                    $this->matcher,
+                    $subject,
+                    $alias,
+                    $arguments,
+                    ExpectationEvent::BROKEN,
+                    $e
+                )
             );
 
             throw $e;

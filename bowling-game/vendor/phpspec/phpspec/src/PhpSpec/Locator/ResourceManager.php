@@ -13,13 +13,9 @@
 
 namespace PhpSpec\Locator;
 
-use RuntimeException;
+use PhpSpec\Exception\Locator\ResourceCreationException;
 
-/**
- * Class ResourceManager
- * @package PhpSpec\Locator
- */
-class ResourceManager
+class ResourceManager implements ResourceManagerInterface
 {
     /**
      * @var ResourceLocatorInterface[]
@@ -59,7 +55,7 @@ class ResourceManager
             $resources = array_merge($resources, $locator->findResources($query));
         }
 
-        return array_values($resources);
+        return $this->removeDuplicateResources($resources);
     }
 
     /**
@@ -77,8 +73,29 @@ class ResourceManager
             }
         }
 
-        throw new RuntimeException(sprintf(
-            'Can not find appropriate suite scope for class `%s`.', $classname
-        ));
+        throw new ResourceCreationException(
+            sprintf(
+                'Can not find appropriate suite scope for class `%s`.',
+                $classname
+            )
+        );
+    }
+
+    /**
+     * @param array $resources
+     *
+     * @return ResourceInterface[]
+     */
+    private function removeDuplicateResources(array $resources)
+    {
+        $filteredResources = array();
+
+        foreach ($resources as $resource) {
+            if (!array_key_exists($resource->getSpecClassname(), $filteredResources)) {
+                $filteredResources[$resource->getSpecClassname()] = $resource;
+            }
+        }
+
+        return array_values($filteredResources);
     }
 }

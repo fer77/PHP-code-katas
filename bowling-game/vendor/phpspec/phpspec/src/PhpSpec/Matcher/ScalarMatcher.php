@@ -14,22 +14,17 @@
 namespace PhpSpec\Matcher;
 
 use PhpSpec\Formatter\Presenter\PresenterInterface;
-
 use PhpSpec\Exception\Example\FailureException;
 
-/**
- * Class ScalarMatcher
- * @package PhpSpec\Matcher
- */
 class ScalarMatcher implements MatcherInterface
 {
     /**
-     * @var \PhpSpec\Formatter\Presenter\PresenterInterface
+     * @var PresenterInterface
      */
     private $presenter;
 
     /**
-     * @param \PhpSpec\Formatter\Presenter\PresenterInterface $presenter
+     * @param PresenterInterface $presenter
      */
     public function __construct(PresenterInterface $presenter)
     {
@@ -69,8 +64,10 @@ class ScalarMatcher implements MatcherInterface
         if (!call_user_func($checker, $subject)) {
             throw new FailureException(sprintf(
                 '%s expected to return %s, but it did not.',
-                $this->presenter->presentString(sprintf('%s(%s)',
-                    $checker, $this->presenter->presentValue($subject)
+                $this->presenter->presentString(sprintf(
+                    '%s(%s)',
+                    $checker,
+                    $this->presenter->presentValue($subject)
                 )),
                 $this->presenter->presentValue(true)
             ));
@@ -94,8 +91,10 @@ class ScalarMatcher implements MatcherInterface
         if (call_user_func($checker, $subject)) {
             throw new FailureException(sprintf(
                 '%s not expected to return %s, but it did.',
-                $this->presenter->presentString(sprintf('%s(%s)',
-                    $checker, $this->presenter->presentValue($subject)
+                $this->presenter->presentString(sprintf(
+                    '%s(%s)',
+                    $checker,
+                    $this->presenter->presentValue($subject)
                 )),
                 $this->presenter->presentValue(true)
             ));
@@ -128,6 +127,6 @@ class ScalarMatcher implements MatcherInterface
             return 'is_bool';
         }
 
-        return 'is_' . $expected;
+        return 'is_'.$expected;
     }
 }

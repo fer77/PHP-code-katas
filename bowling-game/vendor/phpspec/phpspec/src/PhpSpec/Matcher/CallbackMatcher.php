@@ -14,13 +14,8 @@
 namespace PhpSpec\Matcher;
 
 use PhpSpec\Formatter\Presenter\PresenterInterface;
-
 use PhpSpec\Exception\Example\FailureException;
 
-/**
- * Class CallbackMatcher
- * @package PhpSpec\Matcher
- */
 class CallbackMatcher extends BasicMatcher
 {
     /**
@@ -32,7 +27,7 @@ class CallbackMatcher extends BasicMatcher
      */
     private $callback;
     /**
-     * @var \PhpSpec\Formatter\Presenter\PresenterInterface
+     * @var PresenterInterface
      */
     private $presenter;
 

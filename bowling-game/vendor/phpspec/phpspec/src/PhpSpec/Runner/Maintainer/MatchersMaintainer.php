@@ -14,37 +14,36 @@
 namespace PhpSpec\Runner\Maintainer;
 
 use PhpSpec\Loader\Node\ExampleNode;
+use PhpSpec\Matcher\MatcherInterface;
 use PhpSpec\SpecificationInterface;
 use PhpSpec\Runner\MatcherManager;
 use PhpSpec\Runner\CollaboratorManager;
-
 use PhpSpec\Formatter\Presenter\PresenterInterface;
-use PhpSpec\Wrapper\Unwrapper;
 use PhpSpec\Matcher;
 
-/**
- * Class MatchersMaintainer
- * @package PhpSpec\Runner\Maintainer
- */
 class MatchersMaintainer implements MaintainerInterface
 {
     /**
-     * @var \PhpSpec\Formatter\Presenter\PresenterInterface
+     * @var PresenterInterface
      */
     private $presenter;
+
     /**
-     * @var \PhpSpec\Wrapper\Unwrapper
+     * @var MatcherInterface[]
      */
-    private $unwrapper;
+    private $defaultMatchers = array();
 
     /**
      * @param PresenterInterface $presenter
-     * @param Unwrapper          $unwrapper
+     * @param MatcherInterface[] $matchers
      */
-    public function __construct(PresenterInterface $presenter, Unwrapper $unwrapper)
+    public function __construct(PresenterInterface $presenter, array $matchers)
     {
         $this->presenter = $presenter;
-        $this->unwrapper = $unwrapper;
+        $this->defaultMatchers = $matchers;
+        @usort($this->defaultMatchers, function ($matcher1, $matcher2) {
+            return $matcher2->getPriority() - $matcher1->getPriority();
+        });
     }
 
     /**
@@ -63,21 +62,14 @@ class MatchersMaintainer implements MaintainerInterface
      * @param MatcherManager         $matchers
      * @param CollaboratorManager    $collaborators
      */
-    public function prepare(ExampleNode $example, SpecificationInterface $context,
-                            MatcherManager $matchers, CollaboratorManager $collaborators)
-    {
-        $matchers->add(new Matcher\IdentityMatcher($this->presenter));
-        $matchers->add(new Matcher\ComparisonMatcher($this->presenter));
-        $matchers->add(new Matcher\ThrowMatcher($this->unwrapper, $this->presenter));
-        $matchers->add(new Matcher\TypeMatcher($this->presenter));
-        $matchers->add(new Matcher\ObjectStateMatcher($this->presenter));
-        $matchers->add(new Matcher\ScalarMatcher($this->presenter));
-        $matchers->add(new Matcher\ArrayCountMatcher($this->presenter));
-        $matchers->add(new Matcher\ArrayKeyMatcher($this->presenter));
-        $matchers->add(new Matcher\ArrayContainMatcher($this->presenter));
-        $matchers->add(new Matcher\StringStartMatcher($this->presenter));
-        $matchers->add(new Matcher\StringEndMatcher($this->presenter));
-        $matchers->add(new Matcher\StringRegexMatcher($this->presenter));
+    public function prepare(
+        ExampleNode $example,
+        SpecificationInterface $context,
+        MatcherManager $matchers,
+        CollaboratorManager $collaborators
+    ) {
+
+        $matchers->replace($this->defaultMatchers);
 
         if (!$context instanceof Matcher\MatchersProviderInterface) {
             return;
@@ -88,7 +80,9 @@ class MatchersMaintainer implements MaintainerInterface
                 $matchers->add($matcher);
             } else {
                 $matchers->add(new Matcher\CallbackMatcher(
-                    $name, $matcher, $this->presenter
+                    $name,
+                    $matcher,
+                    $this->presenter
                 ));
             }
         }
@@ -100,9 +94,12 @@ class MatchersMaintainer implements MaintainerInterface
      * @param MatcherManager         $matchers
      * @param CollaboratorManager    $collaborators
      */
-    public function teardown(ExampleNode $example, SpecificationInterface $context,
-                             MatcherManager $matchers, CollaboratorManager $collaborators)
-    {
+    public function teardown(
+        ExampleNode $example,
+        SpecificationInterface $context,
+        MatcherManager $matchers,
+        CollaboratorManager $collaborators
+    ) {
     }
 
     /**

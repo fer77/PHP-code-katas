@@ -14,30 +14,24 @@
 namespace PhpSpec\Runner;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-
 use PhpSpec\Runner\Maintainer\LetAndLetgoMaintainer;
 use PhpSpec\Formatter\Presenter\PresenterInterface;
 use PhpSpec\SpecificationInterface;
 use PhpSpec\Event\ExampleEvent;
 use PhpSpec\Loader\Node\ExampleNode;
-
 use PhpSpec\Exception\Exception as PhpSpecException;
 use PhpSpec\Exception\Example as ExampleException;
 use Prophecy\Exception as ProphecyException;
 use Exception;
 
-/**
- * Class ExampleRunner
- * @package PhpSpec\Runner
- */
 class ExampleRunner
 {
     /**
-     * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+     * @var EventDispatcherInterface
      */
     private $dispatcher;
     /**
-     * @var \PhpSpec\Formatter\Presenter\PresenterInterface
+     * @var PresenterInterface
      */
     private $presenter;
     /**
@@ -68,13 +62,15 @@ class ExampleRunner
     }
 
     /**
-     * @param  ExampleNode $example
-     * @return null
+     * @param ExampleNode $example
+     *
+     * @return int
      */
     public function run(ExampleNode $example)
     {
         $startTime = microtime(true);
-        $this->dispatcher->dispatch('beforeExample',
+        $this->dispatcher->dispatch(
+            'beforeExample',
             new ExampleEvent($example)
         );
 
@@ -88,6 +84,9 @@ class ExampleRunner
             $exception = null;
         } catch (ExampleException\PendingException $e) {
             $status    = ExampleEvent::PENDING;
+            $exception = $e;
+        } catch (ExampleException\SkippingException $e) {
+            $status    = ExampleEvent::SKIPPED;
             $exception = $e;
         } catch (ProphecyException\Prediction\PredictionException $e) {
             $status    = ExampleEvent::FAILED;
@@ -105,7 +104,8 @@ class ExampleRunner
         }
 
         $runTime = microtime(true) - $startTime;
-        $this->dispatcher->dispatch('afterExample',
+        $this->dispatcher->dispatch(
+            'afterExample',
             $event = new ExampleEvent($example, $runTime, $status, $exception)
         );
 
@@ -122,7 +122,7 @@ class ExampleRunner
     protected function executeExample(SpecificationInterface $context, ExampleNode $example)
     {
         if ($example->isPending()) {
-            throw new ExampleException\PendingException;
+            throw new ExampleException\PendingException();
         }
 
         $matchers      = new MatcherManager($this->presenter);
@@ -156,14 +156,19 @@ class ExampleRunner
     }
 
     /**
-     * @param $maintainers
-     * @param $example
-     * @param $context
-     * @param $matchers
-     * @param $collaborators
+     * @param Maintainer\MaintainerInterface[] $maintainers
+     * @param ExampleNode                      $example
+     * @param SpecificationInterface           $context
+     * @param MatcherManager                   $matchers
+     * @param CollaboratorManager              $collaborators
      */
-    private function runMaintainersTeardown($maintainers, $example, $context, $matchers, $collaborators)
-    {
+    private function runMaintainersTeardown(
+        array $maintainers,
+        ExampleNode $example,
+        SpecificationInterface $context,
+        MatcherManager $matchers,
+        CollaboratorManager $collaborators
+    ) {
         foreach (array_reverse($maintainers) as $maintainer) {
             $maintainer->teardown($example, $context, $matchers, $collaborators);
         }
@@ -171,9 +176,10 @@ class ExampleRunner
 
     /**
      * @param Maintainer\MaintainerInterface[] $maintainers
+     *
      * @return Maintainer\MaintainerInterface[]
      */
-    private function searchExceptionMaintainers($maintainers)
+    private function searchExceptionMaintainers(array $maintainers)
     {
         return array_filter(
             $maintainers,

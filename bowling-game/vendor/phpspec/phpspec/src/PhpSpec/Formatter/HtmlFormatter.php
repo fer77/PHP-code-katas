@@ -20,10 +20,6 @@ use PhpSpec\Formatter\Presenter\PresenterInterface;
 use PhpSpec\IO\IOInterface as IO;
 use PhpSpec\Listener\StatisticsCollector;
 
-/**
- * Class HtmlFormatter
- * @package PhpSpec\Formatter
- */
 class HtmlFormatter extends BasicFormatter
 {
     /**
@@ -36,8 +32,12 @@ class HtmlFormatter extends BasicFormatter
      */
     private $index = 1;
 
-    public function __construct(Html\ReportItemFactory $reportItemFactory, PresenterInterface $presenter, IO $io, StatisticsCollector $stats)
-    {
+    public function __construct(
+        Html\ReportItemFactory $reportItemFactory,
+        PresenterInterface $presenter,
+        IO $io,
+        StatisticsCollector $stats
+    ) {
         $this->reportItemFactory = $reportItemFactory;
 
         parent::__construct($presenter, $io, $stats);
@@ -48,7 +48,7 @@ class HtmlFormatter extends BasicFormatter
      */
     public function beforeSuite(SuiteEvent $suite)
     {
-        include __DIR__ . "/Html/Template/ReportHeader.html";
+        include __DIR__."/Html/Template/ReportHeader.html";
     }
 
     /**
@@ -58,7 +58,7 @@ class HtmlFormatter extends BasicFormatter
     {
         $index = $this->index++;
         $name = $specification->getTitle();
-        include __DIR__ . "/Html/Template/ReportSpecificationStarts.html";
+        include __DIR__."/Html/Template/ReportSpecificationStarts.html";
     }
 
     /**
@@ -66,7 +66,7 @@ class HtmlFormatter extends BasicFormatter
      */
     public function afterSpecification(SpecificationEvent $specification)
     {
-        include __DIR__ . "/Html/Template/ReportSpecificationEnds.html";
+        include __DIR__."/Html/Template/ReportSpecificationEnds.html";
     }
 
     /**
@@ -84,7 +84,7 @@ class HtmlFormatter extends BasicFormatter
      */
     public function afterSuite(SuiteEvent $suite)
     {
-        include __DIR__ . "/Html/Template/ReportSummary.html";
-        include __DIR__ . "/Html/Template/ReportFooter.html";
+        include __DIR__."/Html/Template/ReportSummary.html";
+        include __DIR__."/Html/Template/ReportFooter.html";
     }
 }

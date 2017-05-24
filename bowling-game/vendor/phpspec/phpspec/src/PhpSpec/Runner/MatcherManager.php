@@ -14,22 +14,17 @@
 namespace PhpSpec\Runner;
 
 use PhpSpec\Matcher\MatcherInterface;
-
 use PhpSpec\Exception\Wrapper\MatcherNotFoundException;
 use PhpSpec\Formatter\Presenter\PresenterInterface;
 
-/**
- * Class MatcherManager
- * @package PhpSpec\Runner
- */
 class MatcherManager
 {
     /**
-     * @var \PhpSpec\Formatter\Presenter\PresenterInterface
+     * @var PresenterInterface
      */
     private $presenter;
     /**
-     * @var array
+     * @var MatcherInterface[]
      */
     private $matchers = array();
 
@@ -53,10 +48,22 @@ class MatcherManager
     }
 
     /**
-     * @param $keyword
-     * @param $subject
-     * @param  array                                               $arguments
-     * @return mixed
+     * Replaces matchers with an already-sorted list
+     *
+     * @param MatcherInterface[] $matchers
+     */
+    public function replace(array $matchers)
+    {
+        $this->matchers = $matchers;
+    }
+
+    /**
+     * @param string $keyword
+     * @param mixed  $subject
+     * @param array  $arguments
+     *
+     * @return MatcherInterface
+     *
      * @throws \PhpSpec\Exception\Wrapper\MatcherNotFoundException
      */
     public function find($keyword, $subject, array $arguments)
@@ -68,12 +75,15 @@ class MatcherManager
         }
 
         throw new MatcherNotFoundException(
-            sprintf('No %s(%s) matcher found for %s.',
+            sprintf(
+                'No %s(%s) matcher found for %s.',
                 $this->presenter->presentString($keyword),
                 $this->presenter->presentValue($arguments),
                 $this->presenter->presentValue($subject)
             ),
-            $keyword, $subject, $arguments
+            $keyword,
+            $subject,
+            $arguments
         );
     }
 }

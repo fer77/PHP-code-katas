@@ -13,9 +13,9 @@
 
 namespace PhpSpec\Formatter\Presenter;
 
-interface PresenterInterface
+/**
+ * @deprecated Use PhpSpec\Formatter\Presenter\Presenter instead
+ */
+interface PresenterInterface extends Presenter
 {
-    public function presentValue($value);
-    public function presentException(\Exception $exception, $verbose = false);
-    public function presentString($string);
 }

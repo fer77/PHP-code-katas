@@ -15,17 +15,10 @@ namespace PhpSpec\Wrapper\Subject;
 
 use PhpSpec\Wrapper\Unwrapper;
 use PhpSpec\Formatter\Presenter\PresenterInterface;
-use PhpSpec\Wrapper\Subject;
-
 use PhpSpec\Exception\Wrapper\SubjectException;
-
 use PhpSpec\Exception\Fracture\InterfaceNotImplementedException;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-/**
- * Class SubjectWithArrayAccess
- * @package PhpSpec\Wrapper\Subject
- */
 class SubjectWithArrayAccess
 {
     /**
@@ -33,11 +26,11 @@ class SubjectWithArrayAccess
      */
     private $caller;
     /**
-     * @var \PhpSpec\Formatter\Presenter\PresenterInterface
+     * @var PresenterInterface
      */
     private $presenter;
     /**
-     * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+     * @var EventDispatcherInterface
      */
     private $dispatcher;
 
@@ -46,9 +39,11 @@ class SubjectWithArrayAccess
      * @param PresenterInterface       $presenter
      * @param EventDispatcherInterface $dispatcher
      */
-    public function __construct(Caller $caller, PresenterInterface $presenter,
-        EventDispatcherInterface $dispatcher)
-    {
+    public function __construct(
+        Caller $caller,
+        PresenterInterface $presenter,
+        EventDispatcherInterface $dispatcher
+    ) {
         $this->caller     = $caller;
         $this->presenter  = $presenter;
         $this->dispatcher = $dispatcher;
@@ -61,7 +56,7 @@ class SubjectWithArrayAccess
      */
     public function offsetExists($key)
     {
-        $unwrapper = new Unwrapper;
+        $unwrapper = new Unwrapper();
         $subject = $this->caller->getWrappedObject();
         $key     = $unwrapper->unwrapOne($key);
 
@@ -77,7 +72,7 @@ class SubjectWithArrayAccess
      */
     public function offsetGet($key)
     {
-        $unwrapper = new Unwrapper;
+        $unwrapper = new Unwrapper();
         $subject = $this->caller->getWrappedObject();
         $key     = $unwrapper->unwrapOne($key);
 
@@ -92,7 +87,7 @@ class SubjectWithArrayAccess
      */
     public function offsetSet($key, $value)
     {
-        $unwrapper = new Unwrapper;
+        $unwrapper = new Unwrapper();
         $subject = $this->caller->getWrappedObject();
         $key     = $unwrapper->unwrapOne($key);
         $value   = $unwrapper->unwrapOne($value);
@@ -107,7 +102,7 @@ class SubjectWithArrayAccess
      */
     public function offsetUnset($key)
     {
-        $unwrapper = new Unwrapper;
+        $unwrapper = new Unwrapper();
         $subject = $this->caller->getWrappedObject();
         $key     = $unwrapper->unwrapOne($key);
 
@@ -137,7 +132,8 @@ class SubjectWithArrayAccess
     private function interfaceNotImplemented()
     {
         return new InterfaceNotImplementedException(
-            sprintf('%s does not implement %s interface, but should.',
+            sprintf(
+                '%s does not implement %s interface, but should.',
                 $this->presenter->presentValue($this->caller->getWrappedObject()),
                 $this->presenter->presentString('ArrayAccess')
             ),
@@ -154,7 +150,8 @@ class SubjectWithArrayAccess
     private function cantUseAsArray($subject)
     {
         return new SubjectException(sprintf(
-            'Can not use %s as array.', $this->presenter->presentValue($subject)
+            'Can not use %s as array.',
+            $this->presenter->presentValue($subject)
         ));
     }
 }

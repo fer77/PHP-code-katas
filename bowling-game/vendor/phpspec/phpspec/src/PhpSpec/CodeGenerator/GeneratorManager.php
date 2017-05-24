@@ -14,7 +14,6 @@
 namespace PhpSpec\CodeGenerator;
 
 use PhpSpec\Locator\ResourceInterface;
-
 use InvalidArgumentException;
 
 /**
@@ -55,7 +54,8 @@ class GeneratorManager
         }
 
         throw new InvalidArgumentException(sprintf(
-            '"%s" code generator is not registered.', $name
+            '"%s" code generator is not registered.',
+            $name
         ));
     }
 }

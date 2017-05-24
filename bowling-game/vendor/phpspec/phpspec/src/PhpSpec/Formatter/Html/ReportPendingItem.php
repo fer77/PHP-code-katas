@@ -16,18 +16,14 @@ namespace PhpSpec\Formatter\Html;
 use PhpSpec\Event\ExampleEvent;
 use PhpSpec\Formatter\Template as TemplateInterface;
 
-/**
- * Class ReportPendingItem
- * @package PhpSpec\Formatter\Html
- */
 class ReportPendingItem
 {
     /**
-     * @var \PhpSpec\Formatter\Template
+     * @var TemplateInterface
      */
     private $template;
     /**
-     * @var \PhpSpec\Event\ExampleEvent
+     * @var ExampleEvent
      */
     private $event;
     /**
@@ -50,7 +46,7 @@ class ReportPendingItem
      */
     public function write()
     {
-        $this->template->render(Template::DIR . '/Template/ReportPending.html', array(
+        $this->template->render(Template::DIR.'/Template/ReportPending.html', array(
             'title' => $this->event->getTitle(),
             'pendingExamplesCount' => self::$pendingExamplesCount
         ));

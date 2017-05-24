@@ -34,4 +34,23 @@ class SuiteEventSpec extends ObjectBehavior
     {
         $this->getResult()->shouldReturn(Example::FAILED);
     }
+
+    function it_defaults_to_saying_suite_is_not_worth_rerunning()
+    {
+        $this->isWorthRerunning()->shouldReturn(false);
+    }
+
+    function it_can_be_told_that_the_suite_is_worth_rerunning()
+    {
+        $this->markAsWorthRerunning();
+        $this->isWorthRerunning()->shouldReturn(true);
+    }
+
+    function it_can_be_told_that_the_suite_is_no_longer_worth_rerunning()
+    {
+        $this->markAsWorthRerunning();
+        $this->markAsNotWorthRerunning();
+
+        $this->isWorthRerunning()->shouldReturn(false);
+    }
 }

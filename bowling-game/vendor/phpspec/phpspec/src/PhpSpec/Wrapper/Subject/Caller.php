@@ -13,26 +13,19 @@
 
 namespace PhpSpec\Wrapper\Subject;
 
+use PhpSpec\CodeAnalysis\MagicAwareAccessInspector;
+use PhpSpec\CodeAnalysis\AccessInspectorInterface;
+use PhpSpec\CodeAnalysis\VisibilityAccessInspector;
 use PhpSpec\Exception\ExceptionFactory;
 use PhpSpec\Loader\Node\ExampleNode;
-
 use PhpSpec\Wrapper\Subject;
 use PhpSpec\Wrapper\Wrapper;
 use PhpSpec\Wrapper\Unwrapper;
-
 use PhpSpec\Event\MethodCallEvent;
-
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as Dispatcher;
-
 use ReflectionClass;
-use ReflectionMethod;
-use ReflectionProperty;
 use ReflectionException;
 
-/**
- * Class Caller
- * @package PhpSpec\Wrapper\Subject
- */
 class Caller
 {
     /**
@@ -40,37 +33,48 @@ class Caller
      */
     private $wrappedObject;
     /**
-     * @var \PhpSpec\Loader\Node\ExampleNode
+     * @var ExampleNode
      */
     private $example;
     /**
-     * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+     * @var Dispatcher
      */
     private $dispatcher;
     /**
-     * @var \PhpSpec\Wrapper\Wrapper
+     * @var Wrapper
      */
     private $wrapper;
     /**
-     * @var \PhpSpec\Exception\ExceptionFactory
+     * @var ExceptionFactory
      */
     private $exceptionFactory;
+    /**
+     * @var AccessInspectorInterface
+     */
+    private $accessInspector;
 
     /**
-     * @param WrappedObject    $wrappedObject
-     * @param ExampleNode      $example
-     * @param Dispatcher       $dispatcher
+     * @param WrappedObject $wrappedObject
+     * @param ExampleNode $example
+     * @param Dispatcher $dispatcher
      * @param ExceptionFactory $exceptions
-     * @param Wrapper          $wrapper
+     * @param Wrapper $wrapper
+     * @param AccessInspectorInterface $accessInspector
      */
-    public function __construct(WrappedObject $wrappedObject, ExampleNode $example, Dispatcher $dispatcher,
-                                ExceptionFactory $exceptions, Wrapper $wrapper)
-    {
+    public function __construct(
+        WrappedObject $wrappedObject,
+        ExampleNode $example,
+        Dispatcher $dispatcher,
+        ExceptionFactory $exceptions,
+        Wrapper $wrapper,
+        AccessInspectorInterface $accessInspector = null
+    ) {
         $this->wrappedObject    = $wrappedObject;
         $this->example          = $example;
         $this->dispatcher       = $dispatcher;
         $this->wrapper          = $wrapper;
         $this->exceptionFactory = $exceptions;
+        $this->accessInspector  = $accessInspector ?: new MagicAwareAccessInspector(new VisibilityAccessInspector());
     }
 
     /**
@@ -90,10 +94,10 @@ class Caller
         }
 
         $subject   = $this->wrappedObject->getInstance();
-        $unwrapper = new Unwrapper;
+        $unwrapper = new Unwrapper();
         $arguments = $unwrapper->unwrapAll($arguments);
 
-        if ($this->isObjectMethodAccessible($method)) {
+        if ($this->isObjectMethodCallable($method)) {
             return $this->invokeAndWrapMethodResult($subject, $method, $arguments);
         }
 
@@ -115,10 +119,10 @@ class Caller
             throw $this->settingPropertyOnNonObject($property);
         }
 
-        $unwrapper = new Unwrapper;
+        $unwrapper = new Unwrapper();
         $value = $unwrapper->unwrapOne($value);
 
-        if ($this->isObjectPropertyAccessible($property, true)) {
+        if ($this->isObjectPropertyWritable($property)) {
             return $this->getWrappedObject()->$property = $value;
         }
 
@@ -143,7 +147,7 @@ class Caller
             throw $this->accessingPropertyOnNonObject($property);
         }
 
-        if ($this->isObjectPropertyAccessible($property)) {
+        if ($this->isObjectPropertyReadable($property)) {
             return $this->wrap($this->getWrappedObject()->$property);
         }
 
@@ -183,27 +187,26 @@ class Caller
 
     /**
      * @param string $property
-     * @param bool   $withValue
      *
      * @return bool
      */
-    private function isObjectPropertyAccessible($property, $withValue = false)
+    private function isObjectPropertyReadable($property)
     {
-        if (!is_object($this->getWrappedObject())) {
-            return false;
-        }
+        $subject = $this->getWrappedObject();
 
-        if (method_exists($this->getWrappedObject(), $withValue ? '__set' : '__get')) {
-            return true;
-        }
+        return is_object($subject) && $this->accessInspector->isPropertyReadable($subject, $property);
+    }
 
-        if (!property_exists($this->getWrappedObject(), $property)) {
-            return false;
-        }
+    /**
+     * @param string $property
+     *
+     * @return bool
+     */
+    private function isObjectPropertyWritable($property)
+    {
+        $subject = $this->getWrappedObject();
 
-        $propertyReflection = new ReflectionProperty($this->getWrappedObject(), $property);
-
-        return $propertyReflection->isPublic();
+        return is_object($subject) && $this->accessInspector->isPropertyWritable($subject, $property);
     }
 
     /**
@@ -211,23 +214,9 @@ class Caller
      *
      * @return bool
      */
-    private function isObjectMethodAccessible($method)
+    private function isObjectMethodCallable($method)
     {
-        if (!is_object($this->getWrappedObject())) {
-            return false;
-        }
-
-        if (method_exists($this->getWrappedObject(), '__call')) {
-            return true;
-        }
-
-        if (!method_exists($this->getWrappedObject(), $method)) {
-            return false;
-        }
-
-        $methodReflection = new ReflectionMethod($this->getWrappedObject(), $method);
-
-        return $methodReflection->isPublic();
+        return $this->accessInspector->isMethodCallable($this->getWrappedObject(), $method);
     }
 
     /**
@@ -235,6 +224,10 @@ class Caller
      */
     private function instantiateWrappedObject()
     {
+        if ($this->wrappedObject->getFactoryMethod()) {
+            return $this->newInstanceWithFactoryMethod();
+        }
+
         $reflection = new ReflectionClass($this->wrappedObject->getClassName());
 
         if (count($this->wrappedObject->getArguments())) {
@@ -253,13 +246,15 @@ class Caller
      */
     private function invokeAndWrapMethodResult($subject, $method, array $arguments = array())
     {
-        $this->dispatcher->dispatch('beforeMethodCall',
+        $this->dispatcher->dispatch(
+            'beforeMethodCall',
             new MethodCallEvent($this->example, $subject, $method, $arguments)
         );
 
         $returnValue = call_user_func_array(array($subject, $method), $arguments);
 
-        $this->dispatcher->dispatch('afterMethodCall',
+        $this->dispatcher->dispatch(
+            'afterMethodCall',
             new MethodCallEvent($this->example, $subject, $method, $arguments)
         );
 
@@ -277,8 +272,10 @@ class Caller
     }
 
     /**
-     * @param  ReflectionClass                                       $reflection
+     * @param ReflectionClass $reflection
+     *
      * @return object
+     *
      * @throws \PhpSpec\Exception\Fracture\MethodNotFoundException
      * @throws \PhpSpec\Exception\Fracture\MethodNotVisibleException
      * @throws \Exception
@@ -291,7 +288,8 @@ class Caller
         } catch (ReflectionException $e) {
             if ($this->detectMissingConstructorMessage($e)) {
                 throw $this->methodNotFound(
-                    '__construct', $this->wrappedObject->getArguments()
+                    '__construct',
+                    $this->wrappedObject->getArguments()
                 );
             }
             throw $e;
@@ -299,13 +297,37 @@ class Caller
     }
 
     /**
-     * @param  ReflectionException $exception
+     * @return mixed
+     * @throws \PhpSpec\Exception\Fracture\MethodNotFoundException
+     */
+    private function newInstanceWithFactoryMethod()
+    {
+        $method = $this->wrappedObject->getFactoryMethod();
+
+        if (!is_array($method)) {
+            $className = $this->wrappedObject->getClassName();
+
+            if (is_string($method) && !method_exists($className, $method)) {
+                throw $this->namedConstructorNotFound(
+                    $method,
+                    $this->wrappedObject->getArguments()
+                );
+            }
+        }
+
+        return call_user_func_array($method, $this->wrappedObject->getArguments());
+    }
+
+    /**
+     * @param ReflectionException $exception
+     *
      * @return bool
      */
     private function detectMissingConstructorMessage(ReflectionException $exception)
     {
         return strpos(
-            $exception->getMessage(), 'does not have a constructor'
+            $exception->getMessage(),
+            'does not have a constructor'
         ) !== 0;
     }
 
@@ -318,8 +340,21 @@ class Caller
     }
 
     /**
+     * @param string $method
+     * @param array  $arguments
+     *
+     * @return \PhpSpec\Exception\Fracture\MethodNotFoundException|\PhpSpec\Exception\Fracture\MethodNotVisibleException
+     */
+    private function namedConstructorNotFound($method, array $arguments = array())
+    {
+        $className = $this->wrappedObject->getClassName();
+
+        return $this->exceptionFactory->namedConstructorNotFound($className, $method, $arguments);
+    }
+
+    /**
      * @param $method
-     * @param  array                                                                                                     $arguments
+     * @param array $arguments
      * @return \PhpSpec\Exception\Fracture\MethodNotFoundException|\PhpSpec\Exception\Fracture\MethodNotVisibleException
      */
     private function methodNotFound($method, array $arguments = array())
@@ -334,7 +369,8 @@ class Caller
     }
 
     /**
-     * @param $property
+     * @param string $property
+     *
      * @return \PhpSpec\Exception\Fracture\PropertyNotFoundException
      */
     private function propertyNotFound($property)
@@ -343,7 +379,8 @@ class Caller
     }
 
     /**
-     * @param $method
+     * @param string $method
+     *
      * @return \PhpSpec\Exception\Wrapper\SubjectException
      */
     private function callingMethodOnNonObject($method)
@@ -352,7 +389,8 @@ class Caller
     }
 
     /**
-     * @param $property
+     * @param string $property
+     *
      * @return \PhpSpec\Exception\Wrapper\SubjectException
      */
     private function settingPropertyOnNonObject($property)
@@ -361,7 +399,8 @@ class Caller
     }
 
     /**
-     * @param $property
+     * @param string $property
+     *
      * @return \PhpSpec\Exception\Wrapper\SubjectException
      */
     private function accessingPropertyOnNonObject($property)
@@ -370,7 +409,8 @@ class Caller
     }
 
     /**
-     * @param $property
+     * @param string $property
+     *
      * @return bool
      */
     private function lookingForConstants($property)
@@ -380,7 +420,8 @@ class Caller
     }
 
     /**
-     * @param $property
+     * @param string $property
+     *
      * @return bool
      */
     public function constantDefined($property)

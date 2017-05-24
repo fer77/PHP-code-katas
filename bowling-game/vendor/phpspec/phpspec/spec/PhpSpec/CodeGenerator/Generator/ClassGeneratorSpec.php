@@ -3,6 +3,7 @@
 namespace spec\PhpSpec\CodeGenerator\Generator;
 
 use PhpSpec\ObjectBehavior;
+use PhpSpec\Process\Context\ExecutionContextInterface;
 use Prophecy\Argument;
 
 use PhpSpec\Console\IO;
@@ -12,9 +13,9 @@ use PhpSpec\Locator\ResourceInterface;
 
 class ClassGeneratorSpec extends ObjectBehavior
 {
-    function let(IO $io, TemplateRenderer $tpl, Filesystem $fs)
+    function let(IO $io, TemplateRenderer $tpl, Filesystem $fs, ExecutionContextInterface $executionContext)
     {
-        $this->beConstructedWith($io, $tpl, $fs);
+        $this->beConstructedWith($io, $tpl, $fs, $executionContext);
     }
 
     function it_is_a_generator()
@@ -22,7 +23,7 @@ class ClassGeneratorSpec extends ObjectBehavior
         $this->shouldBeAnInstanceOf('PhpSpec\CodeGenerator\Generator\GeneratorInterface');
     }
 
-    function it_supports_class_generations(ResourceInterface $resource)
+    function it_supports_class_generation(ResourceInterface $resource)
     {
         $this->supports($resource, 'class', array())->shouldReturn(true);
     }
@@ -39,8 +40,7 @@ class ClassGeneratorSpec extends ObjectBehavior
 
     function it_generates_class_from_resource_and_puts_it_into_appropriate_folder(
         $io, $tpl, $fs, ResourceInterface $resource
-    )
-    {
+    ) {
         $resource->getName()->willReturn('App');
         $resource->getSrcFilename()->willReturn('/project/src/Acme/App.php');
         $resource->getSrcNamespace()->willReturn('Acme');
@@ -65,8 +65,7 @@ class ClassGeneratorSpec extends ObjectBehavior
 
     function it_uses_template_provided_by_templating_system_if_there_is_one(
         $io, $tpl, $fs, ResourceInterface $resource
-    )
-    {
+    ) {
         $resource->getName()->willReturn('App');
         $resource->getSrcFilename()->willReturn('/project/src/Acme/App.php');
         $resource->getSrcNamespace()->willReturn('Acme');
@@ -106,8 +105,7 @@ class ClassGeneratorSpec extends ObjectBehavior
 
     function it_asks_confirmation_if_class_already_exists(
         $io, $tpl, $fs, ResourceInterface $resource
-    )
-    {
+    ) {
         $resource->getName()->willReturn('App');
         $resource->getSrcFilename()->willReturn('/project/src/Acme/App.php');
         $resource->getSrcNamespace()->willReturn('Acme');
@@ -119,5 +117,17 @@ class ClassGeneratorSpec extends ObjectBehavior
         $fs->putFileContents(Argument::cetera())->shouldNotBeCalled();
 
         $this->generate($resource);
+    }
+
+    function it_records_that_class_was_created_in_executioncontext(ResourceInterface $resource, ExecutionContextInterface $executionContext)
+    {
+        $resource->getName()->willReturn('App');
+        $resource->getSrcFilename()->willReturn('/project/src/Acme/App.php');
+        $resource->getSrcNamespace()->willReturn('Acme');
+        $resource->getSrcClassname()->willReturn('Acme\App');
+
+        $this->generate($resource);
+
+        $executionContext->addGeneratedType('Acme\App')->shouldHaveBeenCalled();
     }
 }

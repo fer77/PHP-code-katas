@@ -23,16 +23,19 @@ use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 class Formatter extends OutputFormatter
 {
     /**
-     * @param boolean|null $decorated
+     * @param boolean $decorated
      *
      * @param array $styles
      */
-    public function __construct($decorated = null, array $styles = array())
+    public function __construct($decorated = false, array $styles = array())
     {
         parent::__construct($decorated, $styles);
 
         $this->setStyle('pending', new OutputFormatterStyle('yellow'));
         $this->setStyle('pending-bg', new OutputFormatterStyle('black', 'yellow', array('bold')));
+
+        $this->setStyle('skipped', new OutputFormatterStyle('cyan'));
+        $this->setStyle('skipped-bg', new OutputFormatterStyle('white', 'cyan', array('bold')));
 
         $this->setStyle('failed', new OutputFormatterStyle('red'));
         $this->setStyle('failed-bg', new OutputFormatterStyle('white', 'red', array('bold')));
@@ -44,8 +47,9 @@ class Formatter extends OutputFormatter
         $this->setStyle('passed-bg', new OutputFormatterStyle('black', 'green', array('bold')));
 
         $this->setStyle('value', new OutputFormatterStyle('yellow'));
-        $this->setStyle('lineno', new OutputFormatterStyle(null, 'black'));
+        $this->setStyle('lineno', new OutputFormatterStyle(null));
         $this->setStyle('code', new OutputFormatterStyle('white'));
+        $this->setStyle('label', new OutputFormatterStyle('white', null, array('bold')));
         $this->setStyle('hl', new OutputFormatterStyle('black', 'yellow', array('bold')));
         $this->setStyle('question', new OutputFormatterStyle('black', 'yellow', array('bold')));
 

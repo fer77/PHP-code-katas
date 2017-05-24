@@ -18,8 +18,7 @@ use Exception;
 use PhpSpec\Exception\Exception as PhpSpecException;
 
 /**
- * Class HtmlPresenter
- * @package PhpSpec\Formatter\Html
+ * @deprecated Use /PhpSpec/Formatter/Presenter/SimplePresenter with an HtmlPhpSpecExceptionPresenter instead
  */
 class HtmlPresenter extends StringPresenter
 {
@@ -60,8 +59,8 @@ class HtmlPresenter extends StringPresenter
             } else {
                 $cssClass = "normal";
             }
-            $text .= '<span class="linenum">'.$offset.'</span><span class="' .
-                     $cssClass . '">'.$line.'</span>';
+            $text .= '<span class="linenum">'.$offset.'</span><span class="'.
+                     $cssClass.'">'.$line.'</span>';
 
             $text .= "\n";
         }

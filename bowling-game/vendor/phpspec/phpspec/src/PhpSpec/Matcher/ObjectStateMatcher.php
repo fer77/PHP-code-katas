@@ -14,14 +14,9 @@
 namespace PhpSpec\Matcher;
 
 use PhpSpec\Formatter\Presenter\PresenterInterface;
-
 use PhpSpec\Exception\Example\FailureException;
 use PhpSpec\Exception\Fracture\MethodNotFoundException;
 
-/**
- * Class ObjectStateMatcher
- * @package PhpSpec\Matcher
- */
 class ObjectStateMatcher implements MatcherInterface
 {
     /**
@@ -29,7 +24,7 @@ class ObjectStateMatcher implements MatcherInterface
      */
     private static $regex = '/(be|have)(.+)/';
     /**
-     * @var \PhpSpec\Formatter\Presenter\PresenterInterface
+     * @var PresenterInterface
      */
     private $presenter;
 

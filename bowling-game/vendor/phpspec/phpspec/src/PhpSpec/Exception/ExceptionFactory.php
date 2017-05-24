@@ -40,16 +40,41 @@ class ExceptionFactory
      * @param string $method
      * @param array  $arguments
      *
+     * @return Fracture\NamedConstructorNotFoundException
+     */
+    public function namedConstructorNotFound($classname, $method, array $arguments = array())
+    {
+        $instantiator = new Instantiator();
+        $subject = $instantiator->instantiate($classname);
+
+        $message = sprintf('Named constructor %s not found.', $this->presenter->presentString($classname.'::'.$method));
+
+        return new Fracture\NamedConstructorNotFoundException(
+            $message,
+            $subject,
+            $method,
+            $arguments
+        );
+    }
+
+    /**
+     * @param string $classname
+     * @param string $method
+     * @param array  $arguments
+     *
      * @return Fracture\MethodNotFoundException
      */
     public function methodNotFound($classname, $method, array $arguments = array())
     {
         $instantiator = new Instantiator();
         $subject = $instantiator->instantiate($classname);
-        $message = sprintf('Method %s not found.', $this->presenter->presentString($classname . '::' . $method));
+        $message = sprintf('Method %s not found.', $this->presenter->presentString($classname.'::'.$method));
 
         return new Fracture\MethodNotFoundException(
-            $message, $subject, $method, $arguments
+            $message,
+            $subject,
+            $method,
+            $arguments
         );
     }
 
@@ -64,10 +89,13 @@ class ExceptionFactory
     {
         $instantiator = new Instantiator();
         $subject = $instantiator->instantiate($classname);
-        $message = sprintf('Method %s not visible.', $this->presenter->presentString($classname . '::' . $method));
+        $message = sprintf('Method %s not visible.', $this->presenter->presentString($classname.'::'.$method));
 
         return new Fracture\MethodNotVisibleException(
-            $message, $subject, $method, $arguments
+            $message,
+            $subject,
+            $method,
+            $arguments
         );
     }
 

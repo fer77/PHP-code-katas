@@ -15,14 +15,10 @@ namespace PhpSpec\Wrapper;
 
 use Prophecy\Prophecy\ObjectProphecy;
 
-/**
- * Class Collaborator
- * @package PhpSpec\Wrapper
- */
 class Collaborator implements WrapperInterface
 {
     /**
-     * @var \Prophecy\Prophecy\ObjectProphecy
+     * @var ObjectProphecy
      */
     private $prophecy;
 

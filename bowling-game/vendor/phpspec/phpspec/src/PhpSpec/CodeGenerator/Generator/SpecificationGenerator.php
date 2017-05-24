@@ -19,7 +19,7 @@ use PhpSpec\Locator\ResourceInterface;
  * Generates spec classes from resources and puts them into the appropriate
  * folder using the appropriate template.
  */
-class SpecificationGenerator extends PromptingGenerator implements GeneratorInterface
+class SpecificationGenerator extends PromptingGenerator
 {
     /**
      * @param ResourceInterface $resource
@@ -50,10 +50,11 @@ class SpecificationGenerator extends PromptingGenerator implements GeneratorInte
     protected function renderTemplate(ResourceInterface $resource, $filepath)
     {
         $values = array(
-            '%filepath%'  => $filepath,
-            '%name%'      => $resource->getSpecName(),
-            '%namespace%' => $resource->getSpecNamespace(),
-            '%subject%'   => $resource->getSrcClassname()
+            '%filepath%'      => $filepath,
+            '%name%'          => $resource->getSpecName(),
+            '%namespace%'     => $resource->getSpecNamespace(),
+            '%subject%'       => $resource->getSrcClassname(),
+            '%subject_class%' => $resource->getName()
         );
 
         if (!$content = $this->getTemplateRenderer()->render('specification', $values)) {
@@ -68,7 +69,7 @@ class SpecificationGenerator extends PromptingGenerator implements GeneratorInte
      */
     protected function getTemplate()
     {
-        return file_get_contents(__FILE__, null, null, __COMPILER_HALT_OFFSET__);
+        return file_get_contents(__DIR__.'/templates/specification.template');
     }
 
     /**
@@ -90,21 +91,8 @@ class SpecificationGenerator extends PromptingGenerator implements GeneratorInte
     {
         return sprintf(
             "<info>Specification for <value>%s</value> created in <value>%s</value>.</info>\n",
-            $resource->getSrcClassname(), $filepath
+            $resource->getSrcClassname(),
+            $filepath
         );
-    }
-}
-__halt_compiler();<?php
-
-namespace %namespace%;
-
-use PhpSpec\ObjectBehavior;
-use Prophecy\Argument;
-
-class %name% extends ObjectBehavior
-{
-    function it_is_initializable()
-    {
-        $this->shouldHaveType('%subject%');
     }
 }

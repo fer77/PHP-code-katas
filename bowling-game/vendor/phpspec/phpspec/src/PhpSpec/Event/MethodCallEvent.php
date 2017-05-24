@@ -14,7 +14,6 @@
 namespace PhpSpec\Event;
 
 use PhpSpec\Loader\Node\ExampleNode;
-use PhpSpec\Wrapper\Subject;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
@@ -23,7 +22,7 @@ use Symfony\Component\EventDispatcher\Event;
 class MethodCallEvent extends Event implements EventInterface
 {
     /**
-     * @var \PhpSpec\Loader\Node\ExampleNode
+     * @var ExampleNode
      */
     private $example;
 

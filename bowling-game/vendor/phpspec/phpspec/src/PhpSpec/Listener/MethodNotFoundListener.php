@@ -13,15 +13,14 @@
 
 namespace PhpSpec\Listener;
 
+use PhpSpec\Util\ReservedWordsMethodNameChecker;
+use PhpSpec\Util\NameCheckerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-
 use PhpSpec\Console\IO;
-use PhpSpec\Locator\ResourceManager;
+use PhpSpec\Locator\ResourceManagerInterface;
 use PhpSpec\CodeGenerator\GeneratorManager;
-
 use PhpSpec\Event\ExampleEvent;
 use PhpSpec\Event\SuiteEvent;
-
 use PhpSpec\Exception\Fracture\MethodNotFoundException;
 
 class MethodNotFoundListener implements EventSubscriberInterface
@@ -30,12 +29,28 @@ class MethodNotFoundListener implements EventSubscriberInterface
     private $resources;
     private $generator;
     private $methods = array();
+    private $wrongMethodNames = array();
+    /**
+     * @var NameCheckerInterface
+     */
+    private $nameChecker;
 
-    public function __construct(IO $io, ResourceManager $resources, GeneratorManager $generator)
-    {
+    /**
+     * @param IO $io
+     * @param ResourceManagerInterface $resources
+     * @param GeneratorManager $generator
+     * @param NameCheckerInterface $nameChecker
+     */
+    public function __construct(
+        IO $io,
+        ResourceManagerInterface $resources,
+        GeneratorManager $generator,
+        NameCheckerInterface $nameChecker = null
+    ) {
         $this->io        = $io;
         $this->resources = $resources;
         $this->generator = $generator;
+        $this->nameChecker = $nameChecker ?: new ReservedWordsMethodNameChecker();
     }
 
     public static function getSubscribedEvents()
@@ -56,7 +71,10 @@ class MethodNotFoundListener implements EventSubscriberInterface
             return;
         }
 
-        $this->methods[get_class($exception->getSubject()).'::'.$exception->getMethodName()] = $exception->getArguments();
+        $classname = get_class($exception->getSubject());
+        $methodName = $exception->getMethodName();
+        $this->methods[$classname .'::'.$methodName] = $exception->getArguments();
+        $this->checkIfMethodNameAllowed($methodName);
     }
 
     public function afterSuite(SuiteEvent $event)
@@ -67,6 +85,11 @@ class MethodNotFoundListener implements EventSubscriberInterface
 
         foreach ($this->methods as $call => $arguments) {
             list($classname, $method) = explode('::', $call);
+
+            if (in_array($method, $this->wrongMethodNames)) {
+                continue;
+            }
+
             $message = sprintf('Do you want me to create `%s()` for you?', $call);
 
             try {
@@ -75,13 +98,33 @@ class MethodNotFoundListener implements EventSubscriberInterface
                 continue;
             }
 
-            $this->io->writeln();
             if ($this->io->askConfirmation($message)) {
                 $this->generator->generate($resource, 'method', array(
                     'name'      => $method,
                     'arguments' => $arguments
                 ));
+                $event->markAsWorthRerunning();
             }
+        }
+
+        if ($this->wrongMethodNames) {
+            $this->writeWrongMethodNameMessage();
+            $event->markAsNotWorthRerunning();
+        }
+    }
+
+    private function checkIfMethodNameAllowed($methodName)
+    {
+        if (!$this->nameChecker->isNameValid($methodName)) {
+            $this->wrongMethodNames[] = $methodName;
+        }
+    }
+
+    private function writeWrongMethodNameMessage()
+    {
+        foreach ($this->wrongMethodNames as $methodName) {
+            $message = sprintf("I cannot generate the method '%s' for you because it is a reserved keyword", $methodName);
+            $this->io->writeBrokenCodeBlock($message, 2);
         }
     }
 }

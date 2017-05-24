@@ -18,14 +18,10 @@ use PhpSpec\Matcher\MatcherInterface;
 use PhpSpec\Util\Instantiator;
 use PhpSpec\Wrapper\Subject\WrappedObject;
 
-/**
- * Class DuringCall
- * @package PhpSpec\Wrapper\Subject\Expectation
- */
 abstract class DuringCall
 {
     /**
-     * @var \PhpSpec\Matcher\MatcherInterface
+     * @var MatcherInterface
      */
     private $matcher;
     /**
@@ -77,13 +73,29 @@ abstract class DuringCall
     {
         if ($method === '__construct') {
             $this->subject->beAnInstanceOf($this->wrappedObject->getClassname(), $arguments);
-            $instantiator = new Instantiator;
-            $object = $instantiator->instantiate($this->wrappedObject->getClassname());
-        } else {
-            $object = $this->wrappedObject->instantiate();
+
+            return $this->duringInstantiation();
         }
 
+        $object = $this->wrappedObject->instantiate();
+
         return $this->runDuring($object, $method, $arguments);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function duringInstantiation()
+    {
+        if ($factoryMethod = $this->wrappedObject->getFactoryMethod()) {
+            $method = is_array($factoryMethod) ? $factoryMethod[1] : $factoryMethod;
+        } else {
+            $method = '__construct';
+        }
+        $instantiator = new Instantiator();
+        $object = $instantiator->instantiate($this->wrappedObject->getClassname());
+
+        return $this->runDuring($object, $method, $this->wrappedObject->getArguments());
     }
 
     /**
@@ -100,12 +112,12 @@ abstract class DuringCall
             return $this->during(lcfirst($matches[1]), $arguments);
         }
 
-        throw new MatcherException('Incorrect usage of matcher Throw, ' .
-            'either prefix the method with "during" and capitalize the ' .
+        throw new MatcherException('Incorrect usage of matcher Throw, '.
+            'either prefix the method with "during" and capitalize the '.
             'first character of the method or use ->during(\'callable\', '.
-            'array(arguments)).' . PHP_EOL . 'E.g.' . PHP_EOL . '->during' .
-            ucfirst($method) . '(arguments)' . PHP_EOL . 'or' . PHP_EOL .
-            '->during(\'' . $method . '\', array(arguments))');
+            'array(arguments)).'.PHP_EOL.'E.g.'.PHP_EOL.'->during'.
+            ucfirst($method).'(arguments)'.PHP_EOL.'or'.PHP_EOL.
+            '->during(\''.$method.'\', array(arguments))');
     }
 
     /**

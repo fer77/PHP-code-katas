@@ -14,13 +14,8 @@
 namespace PhpSpec\Matcher;
 
 use PhpSpec\Formatter\Presenter\PresenterInterface;
-
 use PhpSpec\Exception\Example\FailureException;
 
-/**
- * Class TypeMatcher
- * @package PhpSpec\Matcher
- */
 class TypeMatcher extends BasicMatcher
 {
     /**
@@ -33,7 +28,7 @@ class TypeMatcher extends BasicMatcher
         'implement'
     );
     /**
-     * @var \PhpSpec\Formatter\Presenter\PresenterInterface
+     * @var PresenterInterface
      */
     private $presenter;
 

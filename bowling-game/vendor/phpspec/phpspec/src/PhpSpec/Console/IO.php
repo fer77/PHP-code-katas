@@ -14,30 +14,28 @@
 namespace PhpSpec\Console;
 
 use PhpSpec\IO\IOInterface;
-
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Helper\HelperSet;
+use PhpSpec\Config\OptionsConfig;
 
 /**
  * Class IO deals with input and output from command line interaction
  */
 class IO implements IOInterface
 {
+    const COL_MIN_WIDTH = 40;
+    const COL_DEFAULT_WIDTH = 60;
+    const COL_MAX_WIDTH = 80;
+
     /**
-     * @var \Symfony\Component\Console\Input\InputInterface
+     * @var InputInterface
      */
     private $input;
 
     /**
-     * @var \Symfony\Component\Console\Output\OutputInterface
+     * @var OutputInterface
      */
     private $output;
-
-    /**
-     * @var \Symfony\Component\Console\Helper\HelperSet
-     */
-    private $helpers;
 
     /**
      * @var string
@@ -50,15 +48,36 @@ class IO implements IOInterface
     private $hasTempString = false;
 
     /**
+      * @var OptionsConfig
+      */
+    private $config;
+
+    /**
+     * @var integer
+     */
+    private $consoleWidth;
+
+    /**
+     * @var Prompter
+     */
+    private $prompter;
+
+    /**
      * @param InputInterface  $input
      * @param OutputInterface $output
-     * @param HelperSet       $helpers
+     * @param OptionsConfig   $config
+     * @param Prompter        $prompter
      */
-    public function __construct(InputInterface $input, OutputInterface $output, HelperSet $helpers)
-    {
+    public function __construct(
+        InputInterface $input,
+        OutputInterface $output,
+        OptionsConfig $config,
+        Prompter $prompter
+    ) {
         $this->input   = $input;
         $this->output  = $output;
-        $this->helpers = $helpers;
+        $this->config  = $config;
+        $this->prompter = $prompter;
     }
 
     /**
@@ -82,8 +101,21 @@ class IO implements IOInterface
      */
     public function isCodeGenerationEnabled()
     {
-        return $this->input->isInteractive()
+        if (!$this->isInteractive()) {
+            return false;
+        }
+
+        return $this->config->isCodeGenerationEnabled()
             && !$this->input->getOption('no-code-generation');
+    }
+
+    /**
+     * @return bool
+     */
+    public function isStopOnFailureEnabled()
+    {
+        return $this->config->isStopOnFailureEnabled()
+            || $this->input->getOption('stop-on-failure');
     }
 
     /**
@@ -91,11 +123,11 @@ class IO implements IOInterface
      */
     public function isVerbose()
     {
-        return OutputInterface::VERBOSITY_VERBOSE === $this->output->getVerbosity();
+        return OutputInterface::VERBOSITY_VERBOSE <= $this->output->getVerbosity();
     }
 
     /**
-     * @return mixed
+     * @return string
      */
     public function getLastWrittenMessage()
     {
@@ -122,7 +154,7 @@ class IO implements IOInterface
     }
 
     /**
-     * @return void|string
+     * @return null|string
      */
     public function cutTemp()
     {
@@ -186,12 +218,20 @@ class IO implements IOInterface
             $message = $this->indentText($message, $indent);
         }
 
-        $size = strlen(strip_tags($this->lastMessage));
+        if ($message === $this->lastMessage) {
+            return;
+        }
 
-        $this->write(str_repeat("\x08", $size));
-        $this->write($message);
+        $commonPrefix = $this->getCommonPrefix($message, $this->lastMessage);
+        $newSuffix = substr($message, strlen($commonPrefix));
+        $oldSuffix = substr($this->lastMessage, strlen($commonPrefix));
 
-        $fill = $size - strlen(strip_tags($message));
+        $overwriteLength = strlen(strip_tags($oldSuffix));
+
+        $this->write(str_repeat("\x08", $overwriteLength));
+        $this->write($newSuffix);
+
+        $fill = $overwriteLength - strlen(strip_tags($newSuffix));
         if ($fill > 0) {
             $this->write(str_repeat(' ', $fill));
             $this->write(str_repeat("\x08", $fill));
@@ -204,15 +244,21 @@ class IO implements IOInterface
         $this->lastMessage = $message.($newline ? "\n" : '');
     }
 
-    /**
-     * @param string      $question
-     * @param string|null $default
-     *
-     * @return string
-     */
-    public function ask($question, $default = null)
+    private function getCommonPrefix($stringA, $stringB)
     {
-        return $this->helpers->get('dialog')->ask($this->output, $question, $default);
+        for ($i = 0, $len = min(strlen($stringA), strlen($stringB)); $i<$len; $i++) {
+            if ($stringA[$i] != $stringB[$i]) {
+                break;
+            }
+        }
+
+        $common = substr($stringA, 0, $i);
+
+        if (preg_match('/(^.*)<[a-z-]*>?[^<]*$/', $common, $matches)) {
+            $common = $matches[1];
+        }
+
+        return $common;
     }
 
     /**
@@ -224,29 +270,16 @@ class IO implements IOInterface
     public function askConfirmation($question, $default = true)
     {
         $lines   = array();
-        $lines[] = '<question>'.str_repeat(' ', 70)."</question>";
-        foreach (explode("\n", wordwrap($question), 50) as $line) {
-            $lines[] = '<question>  '.str_pad($line, 68).'</question>';
+        $lines[] = '<question>'.str_repeat(' ', $this->getBlockWidth())."</question>";
+        foreach (explode("\n", wordwrap($question, $this->getBlockWidth() - 4, "\n", true)) as $line) {
+            $lines[] = '<question>  '.str_pad($line, $this->getBlockWidth() - 2).'</question>';
         }
-        $lines[] = '<question>'.str_repeat(' ', 62).'</question> <value>'.
+        $lines[] = '<question>'.str_repeat(' ', $this->getBlockWidth() - 8).'</question> <value>'.
             ($default ? '[Y/n]' : '[y/N]').'</value> ';
 
-        return $this->helpers->get('dialog')->askConfirmation(
-            $this->output, implode("\n", $lines), $default
-        );
-    }
+        $formattedQuestion = implode("\n", $lines) . "\n";
 
-    /**
-     * @param string       $question
-     * @param callable     $validator
-     * @param bool         $attempts
-     * @param Boolean|null $default
-     *
-     * @return Boolean
-     */
-    public function askAndValidate($question, $validator, $attempts = false, $default = null)
-    {
-        return $this->helpers->get('dialog')->askAndValidate($this->output, $question, $validator, $attempts, $default);
+        return $this->prompter->askConfirmation($formattedQuestion, $default);
     }
 
     /**
@@ -263,5 +296,72 @@ class IO implements IOInterface
             },
             explode("\n", $text)
         ));
+    }
+
+    public function isRerunEnabled()
+    {
+        return !$this->input->getOption('no-rerun') && $this->config->isReRunEnabled();
+    }
+
+    public function isFakingEnabled()
+    {
+        return $this->input->getOption('fake') || $this->config->isFakingEnabled();
+    }
+
+    public function getBootstrapPath()
+    {
+        if ($path = $this->input->getOption('bootstrap')) {
+            return $path;
+        }
+
+        if ($path = $this->config->getBootstrapPath()) {
+            return $path;
+        }
+        return false;
+    }
+
+    /**
+     * @param integer $width
+     */
+    public function setConsoleWidth($width)
+    {
+        $this->consoleWidth = $width;
+    }
+
+    /**
+     * @return integer
+     */
+    public function getBlockWidth()
+    {
+        $width = self::COL_DEFAULT_WIDTH;
+        if ($this->consoleWidth && ($this->consoleWidth - 10) > self::COL_MIN_WIDTH) {
+            $width = $this->consoleWidth - 10;
+        }
+        if ($width > self::COL_MAX_WIDTH) {
+            $width = self::COL_MAX_WIDTH;
+        }
+        return $width;
+    }
+
+    /**
+     * @param string $message
+     * @param int $indent
+     */
+    public function writeBrokenCodeBlock($message, $indent = 0)
+    {
+        $message = wordwrap($message, $this->getBlockWidth() - ($indent * 2), "\n", true);
+
+        if ($indent) {
+            $message = $this->indentText($message, $indent);
+        }
+
+        $this->output->writeln("<broken-bg>".str_repeat(" ", $this->getBlockWidth())."</broken-bg>");
+
+        foreach (explode("\n", $message) as $line) {
+            $this->output->writeln("<broken-bg>".str_pad($line, $this->getBlockWidth(), ' ')."</broken-bg>");
+        }
+
+        $this->output->writeln("<broken-bg>".str_repeat(" ", $this->getBlockWidth())."</broken-bg>");
+        $this->output->writeln('');
     }
 }

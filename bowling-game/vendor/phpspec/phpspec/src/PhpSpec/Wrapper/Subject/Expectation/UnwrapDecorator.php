@@ -15,14 +15,10 @@ namespace PhpSpec\Wrapper\Subject\Expectation;
 
 use PhpSpec\Wrapper\Unwrapper;
 
-/**
- * Class UnwrapDecorator
- * @package PhpSpec\Wrapper\Subject\Expectation
- */
 class UnwrapDecorator extends Decorator implements ExpectationInterface
 {
     /**
-     * @var \PhpSpec\Wrapper\Unwrapper
+     * @var Unwrapper
      */
     private $unwrapper;
 

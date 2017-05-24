@@ -14,7 +14,6 @@
 namespace PhpSpec\Event;
 
 use Symfony\Component\EventDispatcher\Event;
-
 use PhpSpec\Loader\Node\SpecificationNode;
 
 /**
@@ -23,7 +22,7 @@ use PhpSpec\Loader\Node\SpecificationNode;
 class SpecificationEvent extends Event implements EventInterface
 {
     /**
-     * @var \PhpSpec\Loader\Node\SpecificationNode
+     * @var SpecificationNode
      */
     private $specification;
 

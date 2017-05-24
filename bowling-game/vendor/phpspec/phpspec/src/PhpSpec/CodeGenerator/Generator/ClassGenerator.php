@@ -19,7 +19,7 @@ use PhpSpec\Locator\ResourceInterface;
  * The Class Generator is responsible for generating the classes from a resource
  * in the appropriate folder using the template provided
  */
-class ClassGenerator extends PromptingGenerator implements GeneratorInterface
+class ClassGenerator extends PromptingGenerator
 {
     /**
      * @param ResourceInterface $resource
@@ -60,7 +60,8 @@ class ClassGenerator extends PromptingGenerator implements GeneratorInterface
 
         if (!$content = $this->getTemplateRenderer()->render('class', $values)) {
             $content = $this->getTemplateRenderer()->renderString(
-                $this->getTemplate(), $values
+                $this->getTemplate(),
+                $values
             );
         }
 
@@ -72,7 +73,7 @@ class ClassGenerator extends PromptingGenerator implements GeneratorInterface
      */
     protected function getTemplate()
     {
-        return file_get_contents(__FILE__, null, null, __COMPILER_HALT_OFFSET__);
+        return file_get_contents(__DIR__.'/templates/class.template');
     }
 
     /**
@@ -95,12 +96,8 @@ class ClassGenerator extends PromptingGenerator implements GeneratorInterface
     {
         return sprintf(
             "<info>Class <value>%s</value> created in <value>%s</value>.</info>\n",
-            $resource->getSrcClassname(), $filepath
+            $resource->getSrcClassname(),
+            $filepath
         );
     }
-}
-__halt_compiler();<?php%namespace_block%
-
-class %name%
-{
 }
