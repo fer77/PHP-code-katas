@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @param $number
+ * @return array
+ */
 class PrimeFactors {
 	public function generate($number) {
 		$primes = []; // [2, 2]
