@@ -63,8 +63,8 @@ class RomanNumeralsConverterSpec extends ObjectBehavior
     {
       $this->convert(1999)->shouldReturn('MCMXCIX');
     }
-    function it_calculates_the_roman_numeral_for_4990()
+    function it_calculates_the_roman_numeral_for_4999()
     {
-      $this->convert(4990)->shouldReturn('MMMMCMXC');
+      $this->convert(4999)->shouldReturn('MMMMCMXCIX');
     }
 } // end RomanNumeralsConverterSpec
