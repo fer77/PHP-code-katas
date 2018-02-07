@@ -2,8 +2,8 @@
 
 namespace spec;
 
-use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
+use PhpSpec\ObjectBehavior;
 
 class BowlingGameSpec extends ObjectBehavior {
 	function it_scores_a_gutter_game_as_zero()
