@@ -17,3 +17,6 @@ Start with the easiest possible example.
 When having to explain code with comments, it may be a good idea to refactor to have the code explain itself.
 
 > If refactoring leads to less readable code, refactoring may not be ideal.
+
+## String Calculator
+
