@@ -20,3 +20,19 @@ When having to explain code with comments, it may be a good idea to refactor to 
 
 ## String Calculator
 
+## Game of tennis
+
+0 = Love
+
+1-0 => Fifteen-Love
+2-0 => Thirty-Love
+3-0 => Forty-Love
+4-0 => Winner
+4-3 => Advantage Player
+4-4 => Deuce
+
+2-2 => Thirty-All
+1-1 => Fifteen-All
+
+> start by finding the easiest possible solution.
+
