@@ -1,0 +1,7 @@
+# String Calculator
+
+`vendor/bin/phpspec run`
+`vendor/bin/phpspec describe <name of file>`
+`vendor/bin/phpspec run -fpretty`  Shows test running.
+
+1. StringCalculator::add('1,2,3\n1000') => 6

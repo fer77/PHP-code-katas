@@ -36,3 +36,5 @@ When having to explain code with comments, it may be a good idea to refactor to 
 
 > start by finding the easiest possible solution.
 
+## FizzBuzz
+
