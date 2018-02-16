@@ -6,6 +6,5 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    '578d079de5cdba2b05d0af0a658c50d4' => $vendorDir . '/crysalead/kahlan/src/init.php',
-    '4e227d66516912dac35f90e94e531ef5' => $vendorDir . '/crysalead/box/src/init.php',
+    '337663d83d8353cc8c7847676b3b0937' => $vendorDir . '/kahlan/kahlan/src/functions.php',
 );
