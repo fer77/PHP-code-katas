@@ -45,3 +45,6 @@ buzz: #'s divizible by 5.
 
 ## Gilded Rose
 
+`GildedRose.php` behaves like a factory. It accepts some values, performes a `$lookup` and creates a new instance of an object.
+
+This problem is a good example of the **open/close** principal.
