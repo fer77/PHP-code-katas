@@ -20,7 +20,7 @@ When having to explain code with comments, it may be a good idea to refactor to 
 
 ## String Calculator
 
-## Game of tennis
+## Game of Tennis
 
 0 = Love
 
@@ -42,3 +42,6 @@ fizz: #'s divizible by 3.
 buzz: #'s divizible by 5.
 
 1, 2, fizz, 4, buzz, fizz, 7, 8, fizz, buzz, 11, fizz, 13, 14, fizzbuzz...
+
+## Gilded Rose
+
